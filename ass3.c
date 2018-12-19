@@ -20,17 +20,29 @@
 const uint8_t MAX_INPUT_STRING_SIZE = 106;
 const uint8_t NUMBER_OF_QR_FLAVORS = 11;
 const uint8_t NIBBLE_SIZE = 4;
-#define POS_PATTERN_SIZE 7
+const uint8_t MODULE_VALUE_BIT = 0;
+const uint8_t MODULE_TAKEN_BIT = 1;
 
+#define POS_PATTERN_SIZE 7
 const uint8_t POS_PATTERN[POS_PATTERN_SIZE][POS_PATTERN_SIZE] =
 {
-  {1, 1, 1, 1, 1, 1, 1},
-  {1, 0, 0, 0, 0, 0, 1},
-  {1, 0, 1, 1, 1, 0, 1},
-  {1, 0, 1, 1, 1, 0, 1},
-  {1, 0, 1, 1, 1, 0, 1},
-  {1, 0, 0, 0, 0, 0, 1},
-  {1, 1, 1, 1, 1, 1, 1}
+  {3, 3, 3, 3, 3, 3, 3},
+  {3, 2, 2, 2, 2, 2, 3},
+  {3, 2, 3, 3, 3, 2, 3},
+  {3, 2, 3, 3, 3, 2, 3},
+  {3, 2, 3, 3, 3, 2, 3},
+  {3, 2, 2, 2, 2, 2, 3},
+  {3, 3, 3, 3, 3, 3, 3}
+};
+
+#define ALIGNMENT_PATTERN_SIZE 5
+const uint8_t ALIGNMENT_PATTERN[ALIGNMENT_PATTERN_SIZE][ALIGNMENT_PATTERN_SIZE] =
+{
+  {3, 3, 3, 3, 3},
+  {3, 2, 2, 2, 3},
+  {3, 2, 3, 2, 3},
+  {3, 2, 2, 2, 3},
+  {3, 3, 3, 3, 3}
 };
 
 enum 
@@ -59,22 +71,50 @@ struct _QRFlavor_
   uint8_t version_;
   unsigned char ec_level_;
   uint8_t ec_data_;
+  uint8_t alignment_pattern_pos_;
 }; 
 
 const struct _QRFlavor_ QRFlavors[] = 
 {
-  {.capacity_ =   7, .version_ = 1, .ec_level_ = 'H', .ec_data_ = 17},
-  {.capacity_ =  11, .version_ = 1, .ec_level_ = 'Q', .ec_data_ = 13},
-  {.capacity_ =  14, .version_ = 1, .ec_level_ = 'M', .ec_data_ = 10},
-  {.capacity_ =  17, .version_ = 1, .ec_level_ = 'L', .ec_data_ =  7},
-  {.capacity_ =  20, .version_ = 2, .ec_level_ = 'Q', .ec_data_ = 22},
-  {.capacity_ =  26, .version_ = 2, .ec_level_ = 'M', .ec_data_ = 16},
-  {.capacity_ =  32, .version_ = 2, .ec_level_ = 'L', .ec_data_ = 10},
-  {.capacity_ =  42, .version_ = 3, .ec_level_ = 'M', .ec_data_ = 26},
-  {.capacity_ =  53, .version_ = 3, .ec_level_ = 'L', .ec_data_ = 15},
-  {.capacity_ =  78, .version_ = 4, .ec_level_ = 'L', .ec_data_ = 20},
-  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26},
+  {.capacity_ =   7, .version_ = 1, .ec_level_ = 'H', .ec_data_ = 17, .alignment_pattern_pos_ = 0},
+  {.capacity_ =  11, .version_ = 1, .ec_level_ = 'Q', .ec_data_ = 13, .alignment_pattern_pos_ = 0},
+  {.capacity_ =  14, .version_ = 1, .ec_level_ = 'M', .ec_data_ = 10, .alignment_pattern_pos_ = 0},
+  {.capacity_ =  17, .version_ = 1, .ec_level_ = 'L', .ec_data_ =  7, .alignment_pattern_pos_ = 0},
+  {.capacity_ =  20, .version_ = 2, .ec_level_ = 'Q', .ec_data_ = 22, .alignment_pattern_pos_ = 18},
+  {.capacity_ =  26, .version_ = 2, .ec_level_ = 'M', .ec_data_ = 16, .alignment_pattern_pos_ = 18},
+  {.capacity_ =  32, .version_ = 2, .ec_level_ = 'L', .ec_data_ = 10, .alignment_pattern_pos_ = 18},
+  {.capacity_ =  42, .version_ = 3, .ec_level_ = 'M', .ec_data_ = 26, .alignment_pattern_pos_ = 22},
+  {.capacity_ =  53, .version_ = 3, .ec_level_ = 'L', .ec_data_ = 15, .alignment_pattern_pos_ = 22},
+  {.capacity_ =  78, .version_ = 4, .ec_level_ = 'L', .ec_data_ = 20, .alignment_pattern_pos_ = 26},
+  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, .alignment_pattern_pos_ = 26},
 };
+
+
+void setModuleValue(uint8_t *module, uint8_t value)
+{
+  if (value) *module |= (1 << MODULE_VALUE_BIT);
+  else *module &= (0 << MODULE_VALUE_BIT);
+}
+
+uint8_t getModuleValue(uint8_t module)
+{
+  return module & 1;
+}
+
+void setModuleTaken(uint8_t *module, uint8_t taken) {
+  if (taken) *module |= (1 << MODULE_TAKEN_BIT);
+  else *module &= (1 << MODULE_TAKEN_BIT);
+}
+
+uint8_t isModuleTaken(uint8_t module) {
+  return module & (1 << MODULE_TAKEN_BIT);
+}
+
+// shortcut function
+void setModuleValueAndTaken(uint8_t *module, uint8_t flag) {
+  setModuleValue(module, flag);
+  setModuleTaken(module, flag);
+}
 
 
 void outputMatrix(uint8_t **matrix, uint8_t size)
@@ -83,7 +123,7 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   {
     for (uint8_t column = 0; column < size; column++)
     {
-      printf("%c ", (matrix[row][column] == 1) ? '#' : ' ');
+      printf("%c ", (getModuleValue(matrix[row][column]) == 1) ? '#' : ' ');
     }
     printf("%s", "\n");
   }
@@ -124,6 +164,32 @@ void mkPositionPattern(uint8_t **matrix, uint8_t size)
   }
 }
 
+
+void mkSeparationPattern(uint8_t **matrix, uint8_t size)
+{
+  for (uint8_t col = 0; col < POS_PATTERN_SIZE + 1; col++)
+  {
+    setModuleValueAndTaken(&(matrix[POS_PATTERN_SIZE][col]), 1);
+    setModuleValueAndTaken(&(matrix[POS_PATTERN_SIZE][size - POS_PATTERN_SIZE - 1 + col]), 1);
+    setModuleValueAndTaken(&(matrix[size - POS_PATTERN_SIZE - 1][col]), 1);
+  }
+
+  for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
+  {
+    setModuleValueAndTaken(&(matrix[row][POS_PATTERN_SIZE]), 1);
+    setModuleValueAndTaken(&(matrix[row][size - POS_PATTERN_SIZE - 1]), 1);
+    setModuleValueAndTaken(&(matrix[size - POS_PATTERN_SIZE + row][POS_PATTERN_SIZE]), 1);
+  }
+}
+
+void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
+{
+  pos = pos - 2; // offset from pattern midpoint
+  for (uint8_t row = 0; row < ALIGNMENT_PATTERN_SIZE; row++)
+  {
+    memcpy(&(matrix[pos + row][pos]), &(ALIGNMENT_PATTERN[row]), sizeof(uint8_t) * ALIGNMENT_PATTERN_SIZE);
+  }
+}
 
 int main(int argc, char** argv)
 {
@@ -231,7 +297,14 @@ int main(int argc, char** argv)
   
   mkPositionPattern(matrix, size);
 
-  //mkSeparationPattern(matrix, size);
+  mkSeparationPattern(matrix, size);
+
+  if (flavor_to_use.alignment_pattern_pos_)
+  {
+    mkAlignmentPattern(matrix, flavor_to_use.alignment_pattern_pos_
+);
+  }
+  
 
   //printf("%s", "BP1");
 
