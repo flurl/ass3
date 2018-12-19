@@ -56,6 +56,16 @@ enum
   ERR_IO = 5
 };
 
+enum {
+  UP = -1,
+  DOWN = 1
+};
+
+enum {
+  LEFT = -1,
+  RIGHT = 1
+};
+
 const uint8_t QR_MODE = 0x04;
 
 
@@ -252,6 +262,99 @@ void reserveFormatAndVersionModules(uint8_t **matrix, uint8_t size)
   
 }
 
+
+uint8_t *getNextFreeModule(uint8_t **matrix, uint8_t size)
+{
+  static int16_t row = -1;
+  static int16_t col = -1;
+  static int8_t row_direction = UP;
+  //static int8_t col_direction = LEFT;
+  //uint8_t *found_module = NULL;
+  static bool next_row = false;
+
+
+  if (col < 0) col = size - 1;
+  if (row < 0) row = size - 1;
+
+  while (col >= 0) {
+    
+    //printf("%i %i %02x %i\n", row, col, matrix[row][col], isModuleTaken(matrix[row][col]));
+    if (isModuleTaken(matrix[row][col])) 
+    {
+      if (next_row) 
+      {
+        row += row_direction;
+        col++;
+        if (row < 0 || row >= size) {
+          if (row_direction == UP) row_direction = DOWN;
+          else row_direction = UP;
+          row += row_direction;
+          col -= 2;
+          if (col == 6) col--;
+        }
+      } 
+      else 
+      {
+        col--;
+      }
+      next_row = !next_row;
+      
+      
+      
+      
+      
+      continue;
+    }
+    //printf("%s", "free module found\n");
+    return &(matrix[row][col]);
+    
+    /*if (!isModuleTaken(matrix[row][col])) return &(matrix[row][col]);
+    col++;
+    row += row_direction;
+
+    
+
+    if (col_direction == LEFT) col_direction = RIGHT;
+    else col_direction = LEFT;
+
+    
+    row += row_direction;*/
+    
+  }
+
+  return NULL;
+
+}
+
+void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, uint8_t data_size)
+{
+  uint8_t *module;
+
+  // the data
+  for (uint8_t counter = 0; counter < data_size; counter++)
+  {
+    for (int8_t bit_pos = 7; bit_pos >= 0; bit_pos--)
+    {
+      //printf("%i %i", counter, bit_pos);
+      //if (getNextFreeModule(matrix, size)) printf("%s\n", "freeModuleFound");
+      module = getNextFreeModule(matrix, size);
+      if (module) {
+        setModuleValue(module, data_stream[counter] & (1 << bit_pos));
+      }
+    }
+  }
+}
+
+void mkDataPattern(uint8_t **matrix, uint8_t size, uint8_t *message_data_stream, uint8_t data_size, uint8_t *ec_data_stream, uint8_t ec_data_size)
+{
+  streamToPattern(matrix, size, message_data_stream, data_size);
+  streamToPattern(matrix, size, ec_data_stream, ec_data_size);
+  // the ec information
+
+
+}
+
+
 int main(int argc, char** argv)
 {
 
@@ -371,6 +474,8 @@ int main(int argc, char** argv)
   setModuleValue(&(matrix[4 * flavor_to_use.version_ + 9][8]), 1);
 
   reserveFormatAndVersionModules(matrix, size);
+
+  mkDataPattern(matrix, size, message_data_stream, flavor_to_use.capacity_ + 2, ec_data, flavor_to_use.ec_data_);
 
   //printf("%s", "BP1");
 
