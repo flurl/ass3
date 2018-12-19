@@ -22,6 +22,8 @@ const uint8_t NUMBER_OF_QR_FLAVORS = 11;
 const uint8_t NIBBLE_SIZE = 4;
 const uint8_t MODULE_VALUE_BIT = 0;
 const uint8_t MODULE_TAKEN_BIT = 1;
+const uint8_t SYNC_PATTERN_POS = 6;
+const uint8_t FORMAT_VERSION_POS = 8;
 
 #define POS_PATTERN_SIZE 7
 const uint8_t POS_PATTERN[POS_PATTERN_SIZE][POS_PATTERN_SIZE] =
@@ -90,17 +92,6 @@ const struct _QRFlavor_ QRFlavors[] =
 };
 
 
-void setModuleValue(uint8_t *module, uint8_t value)
-{
-  if (value) *module |= (1 << MODULE_VALUE_BIT);
-  else *module &= (0 << MODULE_VALUE_BIT);
-}
-
-uint8_t getModuleValue(uint8_t module)
-{
-  return module & 1;
-}
-
 void setModuleTaken(uint8_t *module, uint8_t taken) {
   if (taken) *module |= (1 << MODULE_TAKEN_BIT);
   else *module &= (1 << MODULE_TAKEN_BIT);
@@ -110,11 +101,24 @@ uint8_t isModuleTaken(uint8_t module) {
   return module & (1 << MODULE_TAKEN_BIT);
 }
 
+void setModuleValue(uint8_t *module, uint8_t value)
+{
+  if (value) *module |= (1 << MODULE_VALUE_BIT);
+  else *module &= (0 << MODULE_VALUE_BIT);
+  setModuleTaken(module, 1);
+}
+
+uint8_t getModuleValue(uint8_t module)
+{
+  return module & 1;
+}
+
+
 // shortcut function
-void setModuleValueAndTaken(uint8_t *module, uint8_t flag) {
+/* void setModuleValueAndTaken(uint8_t *module, uint8_t flag) {
   setModuleValue(module, flag);
   setModuleTaken(module, flag);
-}
+} */
 
 
 void outputMatrix(uint8_t **matrix, uint8_t size)
@@ -123,7 +127,7 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   {
     for (uint8_t column = 0; column < size; column++)
     {
-      printf("%c ", (getModuleValue(matrix[row][column]) == 1) ? '#' : ' ');
+      printf("%c ", (getModuleValue(matrix[row][column]) == 1) ? '#' : (isModuleTaken(matrix[row][column])) ? '0' : ' ');
     }
     printf("%s", "\n");
   }
@@ -169,16 +173,16 @@ void mkSeparationPattern(uint8_t **matrix, uint8_t size)
 {
   for (uint8_t col = 0; col < POS_PATTERN_SIZE + 1; col++)
   {
-    setModuleValueAndTaken(&(matrix[POS_PATTERN_SIZE][col]), 1);
-    setModuleValueAndTaken(&(matrix[POS_PATTERN_SIZE][size - POS_PATTERN_SIZE - 1 + col]), 1);
-    setModuleValueAndTaken(&(matrix[size - POS_PATTERN_SIZE - 1][col]), 1);
+    setModuleValue(&(matrix[POS_PATTERN_SIZE][col]), 0);
+    setModuleValue(&(matrix[POS_PATTERN_SIZE][size - POS_PATTERN_SIZE - 1 + col]), 0);
+    setModuleValue(&(matrix[size - POS_PATTERN_SIZE - 1][col]), 0);
   }
 
   for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
   {
-    setModuleValueAndTaken(&(matrix[row][POS_PATTERN_SIZE]), 1);
-    setModuleValueAndTaken(&(matrix[row][size - POS_PATTERN_SIZE - 1]), 1);
-    setModuleValueAndTaken(&(matrix[size - POS_PATTERN_SIZE + row][POS_PATTERN_SIZE]), 1);
+    setModuleValue(&(matrix[row][POS_PATTERN_SIZE]), 0);
+    setModuleValue(&(matrix[row][size - POS_PATTERN_SIZE - 1]), 0);
+    setModuleValue(&(matrix[size - POS_PATTERN_SIZE + row][POS_PATTERN_SIZE]), 0);
   }
 }
 
@@ -189,6 +193,63 @@ void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
   {
     memcpy(&(matrix[pos + row][pos]), &(ALIGNMENT_PATTERN[row]), sizeof(uint8_t) * ALIGNMENT_PATTERN_SIZE);
   }
+}
+
+void mkSyncPattern(uint8_t **matrix, uint8_t size)
+{
+  bool flag = 1;
+  for (uint8_t row_col = POS_PATTERN_SIZE + 1; row_col < size - 1 - POS_PATTERN_SIZE; row_col++)
+  {
+    // sync row
+    setModuleValue(&(matrix[SYNC_PATTERN_POS][row_col]), flag);
+    setModuleTaken(&(matrix[SYNC_PATTERN_POS][row_col]), 1);
+
+    // sync column
+    setModuleValue(&(matrix[row_col][SYNC_PATTERN_POS]), flag);
+    setModuleTaken(&(matrix[row_col][SYNC_PATTERN_POS]), 1);
+    
+    flag = !flag;
+  }
+}
+
+
+void reserveFormatAndVersionModules(uint8_t **matrix, uint8_t size)
+{
+  uint8_t row, col;
+  for (uint8_t row_col = 0; row_col <= POS_PATTERN_SIZE; row_col++)
+  {
+    row = row_col;
+    col = POS_PATTERN_SIZE + 1;
+    // top left vertical
+    if (!isModuleTaken(matrix[row][col])) 
+    {
+      setModuleTaken(&(matrix[row][col]), 1);
+    }
+
+    // top left horizontal
+    row = POS_PATTERN_SIZE + 1;
+    col = row_col;
+    if (!isModuleTaken(matrix[row][col])) 
+    {
+      setModuleTaken(&(matrix[row][col]), 1);
+    }
+
+    // top right horizontal
+    row = POS_PATTERN_SIZE + 1;
+    col = size - 1 - POS_PATTERN_SIZE + row_col;
+    setModuleTaken(&(matrix[row][col]), 1);
+
+
+    // bottom left vertical
+    if (row_col == POS_PATTERN_SIZE) continue;
+    row = size - POS_PATTERN_SIZE + row_col;
+    col = POS_PATTERN_SIZE + 1;
+    setModuleTaken(&(matrix[row][col]), 1);
+  }
+
+  // top left corner module
+  setModuleTaken(&(matrix)[POS_PATTERN_SIZE + 1][POS_PATTERN_SIZE + 1], 1);
+  
 }
 
 int main(int argc, char** argv)
@@ -301,10 +362,15 @@ int main(int argc, char** argv)
 
   if (flavor_to_use.alignment_pattern_pos_)
   {
-    mkAlignmentPattern(matrix, flavor_to_use.alignment_pattern_pos_
-);
+    mkAlignmentPattern(matrix, flavor_to_use.alignment_pattern_pos_);
   }
   
+  mkSyncPattern(matrix, size);
+
+  // add fixed black module
+  setModuleValue(&(matrix[4 * flavor_to_use.version_ + 9][8]), 1);
+
+  reserveFormatAndVersionModules(matrix, size);
 
   //printf("%s", "BP1");
 
