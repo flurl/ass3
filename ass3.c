@@ -20,6 +20,18 @@
 const uint8_t MAX_INPUT_STRING_SIZE = 106;
 const uint8_t NUMBER_OF_QR_FLAVORS = 11;
 const uint8_t NIBBLE_SIZE = 4;
+#define POS_PATTERN_SIZE 7
+
+const uint8_t POS_PATTERN[POS_PATTERN_SIZE][POS_PATTERN_SIZE] =
+{
+  {1, 1, 1, 1, 1, 1, 1},
+  {1, 0, 0, 0, 0, 0, 1},
+  {1, 0, 1, 1, 1, 0, 1},
+  {1, 0, 1, 1, 1, 0, 1},
+  {1, 0, 1, 1, 1, 0, 1},
+  {1, 0, 0, 0, 0, 0, 1},
+  {1, 1, 1, 1, 1, 1, 1}
+};
 
 enum 
 {
@@ -31,6 +43,8 @@ enum
 };
 
 const uint8_t QR_MODE = 0x04;
+
+
 
 struct _MessageData_ 
 {
@@ -63,6 +77,18 @@ const struct _QRFlavor_ QRFlavors[] =
 };
 
 
+void outputMatrix(uint8_t **matrix, uint8_t size)
+{
+  for (uint8_t row = 0; row < size; row++)
+  {
+    for (uint8_t column = 0; column < size; column++)
+    {
+      printf("%c ", (matrix[row][column] == 1) ? '#' : ' ');
+    }
+    printf("%s", "\n");
+  }
+}
+
 void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, struct _QRFlavor_ flavor) 
 {
   md_stream[0] = 0 | (QR_MODE << NIBBLE_SIZE);
@@ -88,6 +114,17 @@ void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, str
 };
 
 
+void mkPositionPattern(uint8_t **matrix, uint8_t size) 
+{
+  for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
+  {
+    memcpy(&(matrix[row][0]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
+    memcpy(&(matrix[row][size - POS_PATTERN_SIZE]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
+    memcpy(&(matrix[size - POS_PATTERN_SIZE + row][0]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
+  }
+}
+
+
 int main(int argc, char** argv)
 {
 
@@ -98,6 +135,8 @@ int main(int argc, char** argv)
   struct _MessageData_ MessageData;
   uint8_t *message_data_stream;
   uint8_t *ec_data;
+  uint8_t size;
+  uint8_t **matrix; // TODO: find a better datatype?
 
   printf("--- QR-Code Encoder ---\n\nPlease enter a text:\n");
 
@@ -177,4 +216,24 @@ int main(int argc, char** argv)
   }
   printf("%s", "\n");
 
+  size = 21 + 4 * (flavor_to_use.version_ - 1);
+
+  //printf("size: %i\n", size);
+
+  // allocate memory for 2-dimensional matrix array
+  matrix = malloc(sizeof(uint8_t*) * size);
+  for (uint8_t row = 0; row < size; row++)
+  {
+    matrix[row] = malloc(sizeof(uint8_t*) * size);
+    // initialize the newly allocated memory to zero
+    memset((matrix[row]), 0, sizeof(uint8_t*) * size);
+  }
+  
+  mkPositionPattern(matrix, size);
+
+  //mkSeparationPattern(matrix, size);
+
+  //printf("%s", "BP1");
+
+  outputMatrix(matrix, size);
 }
