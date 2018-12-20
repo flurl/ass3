@@ -105,18 +105,39 @@ const struct _QRFlavor_ QRFlavors[] =
   {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, .alignment_pattern_pos_ = 30},
 };
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Set the module taken flag for \p module
+/// 
+/// @param module The module for which to set the flag
+/// @param taken The taken flag
+//
 void setModuleTaken(uint8_t *module, uint8_t taken) 
 {
   if (taken) *module |= (1 << MODULE_TAKEN_BIT);
   else *module &= (1 << MODULE_TAKEN_BIT);
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Returns if the \p module is already in use
+/// 
+/// @param module The module for which to set the flag
+///
+/// @return uint8_t True if taken, else false
+//
 uint8_t isModuleTaken(uint8_t module) 
 {
   return (module >> MODULE_TAKEN_BIT) & 1;
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Set the \p module value
+/// 
+/// @param module The module for which to set the value
+/// @param value 1 or zero (in fact, everything other than zero is treated as 1)
+//
 void setModuleValue(uint8_t *module, uint8_t value)
 {
   if (value) *module |= (1 << MODULE_VALUE_BIT);
@@ -124,30 +145,65 @@ void setModuleValue(uint8_t *module, uint8_t value)
   setModuleTaken(module, 1);
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Get the \p module value
+/// 
+/// @param module The module for which to get the value
+///
+/// @return uint8_t 1 or 0
+//
 uint8_t getModuleValue(uint8_t module)
 {
   return module & 1;
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Set the \p module Data Flag
+/// The data flag specifies wether a module is used for the payload data or not
+/// 
+/// @param module The module for which to set the flag
+/// @param value The data flag
+//
 void setModuleDataFlag(uint8_t *module, uint8_t value)
 {
   if (value) *module |= (1 << MODULE_DATA_FLAG_BIT);
   else *module &= (0 << MODULE_DATA_FLAG_BIT);
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Returns wether a \p module is used for payload data
+/// 
+/// @param module The module to check
+/// @return uint8_t True if module is used for payload, else false
+//
 uint8_t getModuleDataFlag(uint8_t module)
 {
   return (module >> MODULE_DATA_FLAG_BIT) & 1;
 }
 
-// shortcut function
+//------------------------------------------------------------------------------
+///
+/// @brief Shortcut to set value and data flag at once
+/// 
+/// @param module The module to use
+/// @param value The module value that should be set
+//
 void setModuleDataValue(uint8_t *module, uint8_t value)
 {
   setModuleValue(module, value);
   setModuleDataFlag(module, true);
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Writes the \p matrix to stdout
+/// 
+/// @param matrix The matrix to display
+/// @param size The matrix size
+//
 void outputMatrix(uint8_t **matrix, uint8_t size)
 {
   for (uint8_t row = 0; row < size; row++)
@@ -161,11 +217,23 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Converts the _MessageData struct \p md to a byte stream considering
+/// the QR-flavor
+/// 
+/// @param[out] md_stream A preallocated array to write the stream to
+/// @param md The _MessageData struct to convert
+/// @param flavor The QR-flavor to use
+//
 void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, struct _QRFlavor_ flavor) 
 {
+  // qr mode and first byte of message
   md_stream[0] = 0 | (QR_MODE << NIBBLE_SIZE);
   md_stream[0] |= (md->data_len_ >> NIBBLE_SIZE);
   md_stream[1] = 0 | (md->data_len_ << NIBBLE_SIZE);
+
+  // the remaining message bytes
   for (uint8_t counter = 1; counter <= md->data_len_; counter++) 
   {
     md_stream[counter] |= (md->data_[counter - 1] >> NIBBLE_SIZE);
@@ -185,7 +253,13 @@ void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, str
 
 };
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Creates the position patterns within the \p matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void mkPositionPattern(uint8_t **matrix, uint8_t size) 
 {
   for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
@@ -196,9 +270,16 @@ void mkPositionPattern(uint8_t **matrix, uint8_t size)
   }
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Creates the separation patterns within the \p matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void mkSeparationPattern(uint8_t **matrix, uint8_t size)
 {
+  // horizontal patterns
   for (uint8_t col = 0; col < POS_PATTERN_SIZE + 1; col++)
   {
     setModuleValue(&(matrix[POS_PATTERN_SIZE][col]), 0);
@@ -206,6 +287,7 @@ void mkSeparationPattern(uint8_t **matrix, uint8_t size)
     setModuleValue(&(matrix[size - POS_PATTERN_SIZE - 1][col]), 0);
   }
 
+  // vertical patterns
   for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
   {
     setModuleValue(&(matrix[row][POS_PATTERN_SIZE]), 0);
@@ -214,6 +296,13 @@ void mkSeparationPattern(uint8_t **matrix, uint8_t size)
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Creates the alignment pattern within the \p matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
 {
   pos = pos - 2; // offset from pattern midpoint
@@ -223,6 +312,13 @@ void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Creates the sync patterns within the \p matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void mkSyncPattern(uint8_t **matrix, uint8_t size)
 {
   bool flag = 1;
@@ -230,20 +326,23 @@ void mkSyncPattern(uint8_t **matrix, uint8_t size)
   {
     // sync row
     setModuleValue(&(matrix[SYNC_PATTERN_POS][row_col]), flag);
-    setModuleTaken(&(matrix[SYNC_PATTERN_POS][row_col]), 1);
-
     // sync column
     setModuleValue(&(matrix[row_col][SYNC_PATTERN_POS]), flag);
-    setModuleTaken(&(matrix[row_col][SYNC_PATTERN_POS]), 1);
-    
     flag = !flag;
   }
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Marks the modules used for format- and version string as taken
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void reserveFormatAndVersionModules(uint8_t **matrix, uint8_t size)
 {
-  uint8_t row, col;
+  uint8_t row = 0;
+  uint8_t col = 0;
   for (uint8_t row_col = 0; row_col <= POS_PATTERN_SIZE; row_col++)
   {
     row = row_col;
@@ -277,17 +376,22 @@ void reserveFormatAndVersionModules(uint8_t **matrix, uint8_t size)
 
   // top left corner module
   setModuleTaken(&(matrix)[POS_PATTERN_SIZE + 1][POS_PATTERN_SIZE + 1], 1);
-  
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Searches the next free module that can be used for payload data
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+///
+/// @return Returns a pointer to the found module, NULL if none is found
+//
 uint8_t *getNextFreeModule(uint8_t **matrix, uint8_t size)
 {
   static int16_t row = -1;
   static int16_t col = -1;
   static int8_t row_direction = UP;
-  //static int8_t col_direction = LEFT;
-  //uint8_t *found_module = NULL;
   static bool next_row = false;
 
 
@@ -295,14 +399,13 @@ uint8_t *getNextFreeModule(uint8_t **matrix, uint8_t size)
   if (row < 0) row = size - 1;
 
   while (col >= 0) {
-    
-    //printf("%i %i %02x %i\n", row, col, matrix[row][col], isModuleTaken(matrix[row][col]));
     if (isModuleTaken(matrix[row][col])) 
     {
       if (next_row) 
       {
         row += row_direction;
         col++;
+        // change vertical direction and go to the left
         if (row < 0 || row >= size) {
           if (row_direction == UP) row_direction = DOWN;
           else row_direction = UP;
@@ -316,45 +419,29 @@ uint8_t *getNextFreeModule(uint8_t **matrix, uint8_t size)
         col--;
       }
       next_row = !next_row;
-      
-      
-      
-      
-      
       continue;
     }
-    //printf("%s", "free module found\n");
     return &(matrix[row][col]);
-    
-    /*if (!isModuleTaken(matrix[row][col])) return &(matrix[row][col]);
-    col++;
-    row += row_direction;
-
-    
-
-    if (col_direction == LEFT) col_direction = RIGHT;
-    else col_direction = LEFT;
-
-    
-    row += row_direction;*/
-    
   }
-
   return NULL;
-
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Inserts the byte \p data_stream into the matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+/// @param data_stream The byte stream that should be placed
+/// @param data_size The length of the \p data_stream
+//
 void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, uint8_t data_size)
 {
-  uint8_t *module;
-
-  // the data
+  uint8_t *module = NULL;
   for (uint8_t counter = 0; counter < data_size; counter++)
   {
     for (int8_t bit_pos = 7; bit_pos >= 0; bit_pos--)
     {
-      //printf("%i %i", counter, bit_pos);
-      //if (getNextFreeModule(matrix, size)) printf("%s\n", "freeModuleFound");
       module = getNextFreeModule(matrix, size);
       if (module) {
         setModuleDataValue(module, (data_stream[counter] >> bit_pos) & 1);
@@ -363,13 +450,30 @@ void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, uint8
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Inserts the data payload and ec-data into the matrix
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+/// @param message_data_stream The data byte stream
+/// @param data_size The size of \p message_data_stream
+/// @param ec_data_stream The error correction byte stream
+/// @param ec_data_size The size of \p ec_data_stream
+//
 void mkDataPattern(uint8_t **matrix, uint8_t size, uint8_t *message_data_stream, uint8_t data_size, uint8_t *ec_data_stream, uint8_t ec_data_size)
 {
   streamToPattern(matrix, size, message_data_stream, data_size);
   streamToPattern(matrix, size, ec_data_stream, ec_data_size);
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// @brief Masks the data modules with the mask pattern
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+//
 void maskData(uint8_t **matrix, uint8_t size)
 {
   for (uint8_t row = 0; row < size; row++)
@@ -384,6 +488,14 @@ void maskData(uint8_t **matrix, uint8_t size)
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Places the format and version info into the pre-reserved modules
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+/// @param format_string The format and version data
+//
 void mkFormatVersionPattern(uint8_t **matrix, uint8_t size, uint32_t format_string)
 {
   uint8_t col, row;
@@ -419,6 +531,11 @@ void mkFormatVersionPattern(uint8_t **matrix, uint8_t size, uint32_t format_stri
   }
 }
 
+//------------------------------------------------------------------------------
+/// @brief Checks the return codes of the EC-lib and handles the errors
+/// 
+/// @param return_value The return value the EC-lib has returned
+//
 void checkECCReturnValue(int return_value)
 {
   if (return_value != ERROR_CORRECTION_RETURN_SUCCESSFUL) 
@@ -436,7 +553,17 @@ void checkECCReturnValue(int return_value)
   }
 }
 
-
+//------------------------------------------------------------------------------
+///
+/// The main program.
+/// Reads a string an generates a corresponding QR-code 
+///
+/// @param argc Could be used for bonus points - we don't use it
+/// @param argv Could be used for bonus points - we don't use it
+///
+/// @return 0 on success, otherwise error code according to error codes enum and
+/// the error that occured
+//
 int main(int argc, char** argv)
 {
 
