@@ -102,16 +102,18 @@ const struct _QRFlavor_ QRFlavors[] =
   {.capacity_ =  42, .version_ = 3, .ec_level_ = 'M', .ec_data_ = 26, .alignment_pattern_pos_ = 22},
   {.capacity_ =  53, .version_ = 3, .ec_level_ = 'L', .ec_data_ = 15, .alignment_pattern_pos_ = 22},
   {.capacity_ =  78, .version_ = 4, .ec_level_ = 'L', .ec_data_ = 20, .alignment_pattern_pos_ = 26},
-  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, .alignment_pattern_pos_ = 26},
+  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, .alignment_pattern_pos_ = 30},
 };
 
 
-void setModuleTaken(uint8_t *module, uint8_t taken) {
+void setModuleTaken(uint8_t *module, uint8_t taken) 
+{
   if (taken) *module |= (1 << MODULE_TAKEN_BIT);
   else *module &= (1 << MODULE_TAKEN_BIT);
 }
 
-uint8_t isModuleTaken(uint8_t module) {
+uint8_t isModuleTaken(uint8_t module) 
+{
   return (module >> MODULE_TAKEN_BIT) & 1;
 }
 
