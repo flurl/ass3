@@ -229,6 +229,38 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   }
 }
 
+void outputMatrixToSVGFile(uint8_t **matrix, uint8_t size, char filename[])
+{
+  const uint8_t module_size = 10;
+  FILE *fp;
+
+  fp = fopen(filename, "w");
+  fputs("<?xml version=\"1.0\"?>\n"
+        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
+        "\"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n"
+        "<svg xmlns=\"http://www.w3.org/2000/svg\">",
+        fp);
+
+  // border width 4x module size
+  fprintf(fp, "<rect x=\"0\" y=\"0\" width=\"%i\" height=\"%i\" "
+        "style=\"fill:%s\"/>\n",
+        module_size * (8 + size), module_size * (8 + size), "white");
+
+  for (uint8_t row = 0; row < size; row++)
+  {
+    for (uint8_t col = 0; col < size; col++)
+    {
+      fprintf(fp, "<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" "
+        "style=\"fill:%s\"/>\n",
+        (col + 4) * module_size, (row + 4) * module_size, module_size, module_size,
+        (getModuleValue(matrix[row][col]) == 1) ? "black" : "white");
+    }
+  }
+
+  fputs("</svg>", fp);
+  fclose(fp);
+}
+
 //------------------------------------------------------------------------------
 ///
 /// @brief Converts the _MessageData struct \p md to a byte stream considering
@@ -594,12 +626,6 @@ void checkECCReturnValue(int return_value)
 //
 int main(int argc, char** argv)
 {
-
-  if (argc > 3) {
-    printf("%s", "Usage: ./ass3 [-b FILENAME]\n");
-    exit(ERR_PARAMS);
-  }
-
   unsigned char input_string[MAX_INPUT_STRING_SIZE + 1];
   int input;
   uint8_t len = 0;
@@ -612,6 +638,19 @@ int main(int argc, char** argv)
   uint32_t format_string;
   uint8_t ec_level;
   int return_value;
+  bool write_svg = false;
+  char filename[256];
+
+  if (argc > 3) 
+  {
+    printf("%s", "Usage: ./ass3 [-b FILENAME]\n");
+    exit(ERR_PARAMS);
+  } 
+  else if (argc == 3 && strcmp(argv[1], "-b") == 0)
+  {
+    write_svg = true;
+    strcpy(filename, argv[2]);
+  }
 
   printf("--- QR-Code Encoder ---\n\nPlease enter a text:\n");
 
@@ -758,4 +797,8 @@ int main(int argc, char** argv)
   printf("\nMask id: %i\nFormat string: 0x%06X\n\nFinal matrix:\n", 
     MASK_PATTERN_ID, format_string);
   outputMatrix(matrix, size);
+
+  if (write_svg) {
+    outputMatrixToSVGFile(matrix, size, filename);
+  }
 }
