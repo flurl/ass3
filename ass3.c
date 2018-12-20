@@ -229,6 +229,14 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   }
 }
 
+//------------------------------------------------------------------------------
+///
+/// @brief Writes the matrix as SVG file
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+/// @param filename The filename under which the svg should be saved
+//
 void outputMatrixToSVGFile(uint8_t **matrix, uint8_t size, char filename[])
 {
   const uint8_t module_size = 10;
