@@ -42,7 +42,8 @@ const uint8_t POS_PATTERN[POS_PATTERN_SIZE][POS_PATTERN_SIZE] =
 };
 
 #define ALIGNMENT_PATTERN_SIZE 5
-const uint8_t ALIGNMENT_PATTERN[ALIGNMENT_PATTERN_SIZE][ALIGNMENT_PATTERN_SIZE] =
+const uint8_t ALIGNMENT_PATTERN[ALIGNMENT_PATTERN_SIZE][ALIGNMENT_PATTERN_SIZE] 
+=
 {
   {3, 3, 3, 3, 3},
   {3, 2, 2, 2, 3},
@@ -92,17 +93,28 @@ struct _QRFlavor_
 
 const struct _QRFlavor_ QRFlavors[] = 
 {
-  {.capacity_ =   7, .version_ = 1, .ec_level_ = 'H', .ec_data_ = 17, .alignment_pattern_pos_ = 0},
-  {.capacity_ =  11, .version_ = 1, .ec_level_ = 'Q', .ec_data_ = 13, .alignment_pattern_pos_ = 0},
-  {.capacity_ =  14, .version_ = 1, .ec_level_ = 'M', .ec_data_ = 10, .alignment_pattern_pos_ = 0},
-  {.capacity_ =  17, .version_ = 1, .ec_level_ = 'L', .ec_data_ =  7, .alignment_pattern_pos_ = 0},
-  {.capacity_ =  20, .version_ = 2, .ec_level_ = 'Q', .ec_data_ = 22, .alignment_pattern_pos_ = 18},
-  {.capacity_ =  26, .version_ = 2, .ec_level_ = 'M', .ec_data_ = 16, .alignment_pattern_pos_ = 18},
-  {.capacity_ =  32, .version_ = 2, .ec_level_ = 'L', .ec_data_ = 10, .alignment_pattern_pos_ = 18},
-  {.capacity_ =  42, .version_ = 3, .ec_level_ = 'M', .ec_data_ = 26, .alignment_pattern_pos_ = 22},
-  {.capacity_ =  53, .version_ = 3, .ec_level_ = 'L', .ec_data_ = 15, .alignment_pattern_pos_ = 22},
-  {.capacity_ =  78, .version_ = 4, .ec_level_ = 'L', .ec_data_ = 20, .alignment_pattern_pos_ = 26},
-  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, .alignment_pattern_pos_ = 30},
+  {.capacity_ =   7, .version_ = 1, .ec_level_ = 'H', .ec_data_ = 17, 
+    .alignment_pattern_pos_ = 0},
+  {.capacity_ =  11, .version_ = 1, .ec_level_ = 'Q', .ec_data_ = 13, 
+    .alignment_pattern_pos_ = 0},
+  {.capacity_ =  14, .version_ = 1, .ec_level_ = 'M', .ec_data_ = 10, 
+    .alignment_pattern_pos_ = 0},
+  {.capacity_ =  17, .version_ = 1, .ec_level_ = 'L', .ec_data_ =  7, 
+    .alignment_pattern_pos_ = 0},
+  {.capacity_ =  20, .version_ = 2, .ec_level_ = 'Q', .ec_data_ = 22, 
+    .alignment_pattern_pos_ = 18},
+  {.capacity_ =  26, .version_ = 2, .ec_level_ = 'M', .ec_data_ = 16, 
+    .alignment_pattern_pos_ = 18},
+  {.capacity_ =  32, .version_ = 2, .ec_level_ = 'L', .ec_data_ = 10, 
+    .alignment_pattern_pos_ = 18},
+  {.capacity_ =  42, .version_ = 3, .ec_level_ = 'M', .ec_data_ = 26, 
+    .alignment_pattern_pos_ = 22},
+  {.capacity_ =  53, .version_ = 3, .ec_level_ = 'L', .ec_data_ = 15, 
+    .alignment_pattern_pos_ = 22},
+  {.capacity_ =  78, .version_ = 4, .ec_level_ = 'L', .ec_data_ = 20, 
+    .alignment_pattern_pos_ = 26},
+  {.capacity_ = 106, .version_ = 5, .ec_level_ = 'L', .ec_data_ = 26, 
+    .alignment_pattern_pos_ = 30},
 };
 
 //------------------------------------------------------------------------------
@@ -226,7 +238,8 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
 /// @param md The _MessageData struct to convert
 /// @param flavor The QR-flavor to use
 //
-void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, struct _QRFlavor_ flavor) 
+void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, 
+struct _QRFlavor_ flavor) 
 {
   // qr mode and first byte of message
   md_stream[0] = 0 | (QR_MODE << NIBBLE_SIZE);
@@ -245,7 +258,8 @@ void generateMessageDataStream(uint8_t *md_stream, struct _MessageData_ *md, str
 
   // padd with 0xEC11
   bool flag = true;
-  for (uint8_t counter = md->data_len_ + 2; counter < flavor.capacity_ + 2; counter++) 
+  for (uint8_t counter = md->data_len_ + 2; counter < flavor.capacity_ + 2; 
+    counter++) 
   {
     md_stream[counter] = (flag) ? 0xEC : 0x11;
     flag = !flag;
@@ -264,9 +278,12 @@ void mkPositionPattern(uint8_t **matrix, uint8_t size)
 {
   for (uint8_t row = 0; row < POS_PATTERN_SIZE; row++)
   {
-    memcpy(&(matrix[row][0]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
-    memcpy(&(matrix[row][size - POS_PATTERN_SIZE]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
-    memcpy(&(matrix[size - POS_PATTERN_SIZE + row][0]), &(POS_PATTERN[row]), sizeof(uint8_t) * POS_PATTERN_SIZE);
+    memcpy(&(matrix[row][0]), &(POS_PATTERN[row]), sizeof(uint8_t) * 
+      POS_PATTERN_SIZE);
+    memcpy(&(matrix[row][size - POS_PATTERN_SIZE]), &(POS_PATTERN[row]), 
+      sizeof(uint8_t) * POS_PATTERN_SIZE);
+    memcpy(&(matrix[size - POS_PATTERN_SIZE + row][0]), &(POS_PATTERN[row]), 
+      sizeof(uint8_t) * POS_PATTERN_SIZE);
   }
 }
 
@@ -283,7 +300,8 @@ void mkSeparationPattern(uint8_t **matrix, uint8_t size)
   for (uint8_t col = 0; col < POS_PATTERN_SIZE + 1; col++)
   {
     setModuleValue(&(matrix[POS_PATTERN_SIZE][col]), 0);
-    setModuleValue(&(matrix[POS_PATTERN_SIZE][size - POS_PATTERN_SIZE - 1 + col]), 0);
+    setModuleValue(&(matrix[POS_PATTERN_SIZE][size - POS_PATTERN_SIZE - 1 + 
+      col]), 0);
     setModuleValue(&(matrix[size - POS_PATTERN_SIZE - 1][col]), 0);
   }
 
@@ -292,7 +310,8 @@ void mkSeparationPattern(uint8_t **matrix, uint8_t size)
   {
     setModuleValue(&(matrix[row][POS_PATTERN_SIZE]), 0);
     setModuleValue(&(matrix[row][size - POS_PATTERN_SIZE - 1]), 0);
-    setModuleValue(&(matrix[size - POS_PATTERN_SIZE + row][POS_PATTERN_SIZE]), 0);
+    setModuleValue(&(matrix[size - POS_PATTERN_SIZE + row][POS_PATTERN_SIZE]), 
+      0);
   }
 }
 
@@ -308,7 +327,8 @@ void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
   pos = pos - 2; // offset from pattern midpoint
   for (uint8_t row = 0; row < ALIGNMENT_PATTERN_SIZE; row++)
   {
-    memcpy(&(matrix[pos + row][pos]), &(ALIGNMENT_PATTERN[row]), sizeof(uint8_t) * ALIGNMENT_PATTERN_SIZE);
+    memcpy(&(matrix[pos + row][pos]), &(ALIGNMENT_PATTERN[row]), sizeof(uint8_t)
+      * ALIGNMENT_PATTERN_SIZE);
   }
 }
 
@@ -322,7 +342,8 @@ void mkAlignmentPattern(uint8_t **matrix, uint8_t pos)
 void mkSyncPattern(uint8_t **matrix, uint8_t size)
 {
   bool flag = 1;
-  for (uint8_t row_col = POS_PATTERN_SIZE + 1; row_col < size - 1 - POS_PATTERN_SIZE; row_col++)
+  for (uint8_t row_col = POS_PATTERN_SIZE + 1; row_col < size - 1 - 
+    POS_PATTERN_SIZE; row_col++)
   {
     // sync row
     setModuleValue(&(matrix[SYNC_PATTERN_POS][row_col]), flag);
@@ -435,7 +456,8 @@ uint8_t *getNextFreeModule(uint8_t **matrix, uint8_t size)
 /// @param data_stream The byte stream that should be placed
 /// @param data_size The length of the \p data_stream
 //
-void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, uint8_t data_size)
+void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, 
+uint8_t data_size)
 {
   uint8_t *module = NULL;
   for (uint8_t counter = 0; counter < data_size; counter++)
@@ -461,7 +483,8 @@ void streamToPattern(uint8_t **matrix, uint8_t size, uint8_t *data_stream, uint8
 /// @param ec_data_stream The error correction byte stream
 /// @param ec_data_size The size of \p ec_data_stream
 //
-void mkDataPattern(uint8_t **matrix, uint8_t size, uint8_t *message_data_stream, uint8_t data_size, uint8_t *ec_data_stream, uint8_t ec_data_size)
+void mkDataPattern(uint8_t **matrix, uint8_t size, uint8_t *message_data_stream, 
+uint8_t data_size, uint8_t *ec_data_stream, uint8_t ec_data_size)
 {
   streamToPattern(matrix, size, message_data_stream, data_size);
   streamToPattern(matrix, size, ec_data_stream, ec_data_size);
@@ -480,9 +503,11 @@ void maskData(uint8_t **matrix, uint8_t size)
   {
     for (uint8_t col = 0; col < size; col++)
     {
-      if (getModuleDataFlag(matrix[row][col]) || !isModuleTaken(matrix[row][col]))
+      if (getModuleDataFlag(matrix[row][col]) || 
+          !isModuleTaken(matrix[row][col]))
       {
-        setModuleValue(&(matrix[row][col]), getModuleValue(matrix[row][col]) ^ ((((col * row) % 2) + ((col * row) % 3)) % 2 == 0 ));
+        setModuleValue(&(matrix[row][col]), getModuleValue(matrix[row][col]) ^ 
+          ((((col * row) % 2) + ((col * row) % 3)) % 2 == 0 ));
       }
     }
   }
@@ -496,7 +521,8 @@ void maskData(uint8_t **matrix, uint8_t size)
 /// @param size The matrix size
 /// @param format_string The format and version data
 //
-void mkFormatVersionPattern(uint8_t **matrix, uint8_t size, uint32_t format_string)
+void mkFormatVersionPattern(uint8_t **matrix, uint8_t size, uint32_t 
+format_string)
 {
   uint8_t col, row;
   for (uint8_t bit_pos = 0; bit_pos < FORMAT_VERSION_LENGTH; bit_pos++)
@@ -547,7 +573,9 @@ void checkECCReturnValue(int return_value)
     } 
     else if (return_value == ERROR_CORRECTION_ERROR_INVALID_PARAMETER)
     {
-      printf("%s", "[ERR] Function from errorcorrection library called with wrong parameters.\n");
+      printf("%s", "[ERR] Function from errorcorrection library called with "
+             "wrong parameters.\n"
+      );
       exit(ERR_ECC_PARAMS);
     }
   }
@@ -593,7 +621,9 @@ int main(int argc, char** argv)
     if (input == '\n' || input == EOF) break;
     if (len == MAX_INPUT_STRING_SIZE)
     {
-      printf("[ERR] Text to encode is too long, max. 106 bytes can be encoded.\n");
+      printf("[ERR] Text to encode is too long, max. 106 bytes can be "
+             "encoded.\n"
+      );
       exit(ERR_TEXT_SIZE);
     }
     input_string[len] = input;
@@ -637,7 +667,8 @@ int main(int argc, char** argv)
 
   // error correction
   ec_data = malloc(sizeof(uint8_t) * flavor_to_use.ec_data_);
-  return_value = generateErrorCorrectionCodewords(ec_data, flavor_to_use.ec_data_, message_data_stream, flavor_to_use.capacity_ + 2);
+  return_value = generateErrorCorrectionCodewords(ec_data, 
+    flavor_to_use.ec_data_, message_data_stream, flavor_to_use.capacity_ + 2);
   checkECCReturnValue(return_value);
 
   printf("Error correction codewords:\n");
@@ -693,7 +724,8 @@ int main(int argc, char** argv)
 
   reserveFormatAndVersionModules(matrix, size);
 
-  mkDataPattern(matrix, size, message_data_stream, flavor_to_use.capacity_ + 2, ec_data, flavor_to_use.ec_data_);
+  mkDataPattern(matrix, size, message_data_stream, flavor_to_use.capacity_ + 2, 
+    ec_data, flavor_to_use.ec_data_);
 
   printf("%s", "\nData matrix:\n");
   outputMatrix(matrix, size);
@@ -717,11 +749,13 @@ int main(int argc, char** argv)
       printf("%s", "Invalid EC Level");
       exit(ERR_ECC_PARAMS);
   }
-  return_value = generateFormatString(&format_string, flavor_to_use.version_, ec_level, MASK_PATTERN_ID);
+  return_value = generateFormatString(&format_string, flavor_to_use.version_, 
+    ec_level, MASK_PATTERN_ID);
   checkECCReturnValue(return_value);
 
   mkFormatVersionPattern(matrix, size, format_string);
 
-  printf("\nMask id: %i\nFormat string: 0x%06X\n\nFinal matrix:\n", MASK_PATTERN_ID, format_string);
+  printf("\nMask id: %i\nFormat string: 0x%06X\n\nFinal matrix:\n", 
+    MASK_PATTERN_ID, format_string);
   outputMatrix(matrix, size);
 }
