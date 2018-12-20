@@ -152,7 +152,8 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
   {
     for (uint8_t column = 0; column < size; column++)
     {
-      printf("%c ", (getModuleValue(matrix[row][column]) == 1) ? '#' : ' ');
+      printf("%c", (getModuleValue(matrix[row][column]) == 1) ? '#' : ' ');
+      if (column < size - 1) printf("%s", " ");
     }
     printf("%s", "\n");
   }
@@ -391,10 +392,12 @@ void mkFormatVersionPattern(uint8_t **matrix, uint8_t size, uint32_t format_stri
     {
       col = POS_PATTERN_SIZE + 1;
       row = bit_pos;
+      if (bit_pos >= SYNC_PATTERN_POS) row++;
     }
     else 
     {
-      col = POS_PATTERN_SIZE - (bit_pos - 7);
+      col = POS_PATTERN_SIZE - (bit_pos - 8);
+      if (col <= SYNC_PATTERN_POS) col--;
       row = POS_PATTERN_SIZE + 1;
     }
     setModuleValue(&(matrix[row][col]), (format_string >> bit_pos) & 1 );
@@ -441,7 +444,7 @@ int main(int argc, char** argv)
   }
 
   unsigned char input_string[MAX_INPUT_STRING_SIZE + 1];
-  unsigned char input;
+  int input;
   uint8_t len = 0;
   struct _QRFlavor_ flavor_to_use;
   struct _MessageData_ MessageData;
@@ -498,7 +501,7 @@ int main(int argc, char** argv)
   for (uint8_t counter = 0; counter < flavor_to_use.capacity_ + 2; counter++)
   {
     printf("0x%02X", message_data_stream[counter]);
-    if (counter < flavor_to_use.capacity_ + 2) printf("%s", ", ");
+    if (counter < flavor_to_use.capacity_ + 1) printf("%s", ", ");
   }
   printf("%s", "\n");
 
@@ -512,13 +515,13 @@ int main(int argc, char** argv)
   for (uint8_t counter = 0; counter < flavor_to_use.ec_data_; counter++)
   {
     printf("0x%02X", ec_data[counter]);
-    if (counter < flavor_to_use.ec_data_) printf("%s", ", ");
+    if (counter < flavor_to_use.ec_data_ - 1) printf("%s", ", ");
   }
   printf("%s", "\n");
 
 
   // message
-  printf("Message data codewords:\n");
+  printf("Data codewords:\n");
   for (uint8_t counter = 0; counter < flavor_to_use.capacity_ + 2; counter++)
   {
     printf("0x%02X", message_data_stream[counter]);
@@ -528,7 +531,7 @@ int main(int argc, char** argv)
   for (uint8_t counter = 0; counter < flavor_to_use.ec_data_; counter++)
   {
     printf("0x%02X", ec_data[counter]);
-    if (counter < flavor_to_use.ec_data_) printf("%s", ", ");
+    if (counter < flavor_to_use.ec_data_ - 1) printf("%s", ", ");
   }
   printf("%s", "\n");
 
