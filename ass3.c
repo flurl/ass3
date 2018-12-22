@@ -54,6 +54,7 @@ const uint8_t ALIGNMENT_PATTERN[ALIGNMENT_PATTERN_SIZE][ALIGNMENT_PATTERN_SIZE]
 
 enum 
 {
+  ERR_NO_ERROR = 0,
   ERR_PARAMS = 1,
   ERR_ECC_OOM = 2,
   ERR_TEXT_SIZE = 3,
@@ -809,4 +810,15 @@ int main(int argc, char** argv)
   if (write_svg) {
     outputMatrixToSVGFile(matrix, size, filename);
   }
+
+  free(MessageData.data_);
+  free(message_data_stream);
+  free(ec_data);
+  for (uint8_t row = 0; row < size; row++)
+  {
+    free(matrix[row]);
+  }
+  free(matrix);
+
+  return ERR_NO_ERROR;
 }
