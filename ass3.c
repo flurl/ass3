@@ -232,6 +232,18 @@ void outputMatrix(uint8_t **matrix, uint8_t size)
 
 //------------------------------------------------------------------------------
 ///
+/// @brief Outputs the IO error text and exits with corresponding error code
+/// 
+/// @param filename Name of the file which caused the error
+//
+static inline void exitWithIOError(char filename[])
+{
+  printf("[ERR] Could not write file %s.\n", filename);
+  exit(ERR_IO);
+}
+
+//------------------------------------------------------------------------------
+///
 /// @brief Writes the matrix as SVG file
 /// 
 /// @param matrix The matrix to use
@@ -242,33 +254,70 @@ void outputMatrixToSVGFile(uint8_t **matrix, uint8_t size, char filename[])
 {
   const uint8_t module_size = 10;
   FILE *fp;
+  int return_value;
 
   fp = fopen(filename, "w");
-  fputs("<?xml version=\"1.0\"?>\n"
+  if (!fp) exitWithIOError(filename);
+
+  return_value = fputs("<?xml version=\"1.0\"?>\n"
         "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
         "\"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n"
         "<svg xmlns=\"http://www.w3.org/2000/svg\">",
         fp);
+  if (return_value == EOF) exitWithIOError(filename);
 
   // border width 4x module size
-  fprintf(fp, "<rect x=\"0\" y=\"0\" width=\"%i\" height=\"%i\" "
-        "style=\"fill:%s\"/>\n",
-        module_size * (8 + size), module_size * (8 + size), "white");
+  return_value = fprintf(fp, "<rect x=\"0\" y=\"0\" width=\"%i\" height=\"%i\" "
+    "style=\"fill:%s\"/>\n",
+    module_size * (8 + size), module_size * (8 + size), "white");
+  if (return_value < 0) exitWithIOError(filename);
 
   for (uint8_t row = 0; row < size; row++)
   {
     for (uint8_t col = 0; col < size; col++)
     {
-      fprintf(fp, "<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" "
+      return_value = fprintf(fp, "<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" "
         "style=\"fill:%s\"/>\n",
-        (col + 4) * module_size, (row + 4) * module_size, module_size, module_size,
-        (getModuleValue(matrix[row][col]) == 1) ? "black" : "white");
+        (col + 4) * module_size, (row + 4) * module_size, module_size,
+        module_size, (getModuleValue(matrix[row][col]) == 1) ? "black" : 
+          "white");
+      if (return_value < 0) exitWithIOError(filename);
     }
   }
 
   fputs("</svg>", fp);
-  fclose(fp);
+  if (fclose(fp) == EOF) exitWithIOError(filename); 
 }
+
+//------------------------------------------------------------------------------
+///
+/// @brief Writes the matrix as CSV file
+/// 
+/// @param matrix The matrix to use
+/// @param size The matrix size
+/// @param filename The filename under which the csv should be saved
+//
+void outputMatrixToCSVFile(uint8_t **matrix, uint8_t size, char filename[])
+{
+  FILE *fp;
+  int return_value;
+
+  fp = fopen(filename, "w");
+  if (!fp) exitWithIOError(filename);
+
+  for (uint8_t row = 0; row < size; row++)
+  {
+    for (uint8_t col = 0; col < size; col++)
+    {
+      return_value = fprintf(fp, "%i;", getModuleValue(matrix[row][col]));
+      if (return_value < 0) exitWithIOError(filename);
+    }
+    return_value = fprintf(fp, "%s", "\n");
+    if (return_value < 0) exitWithIOError(filename);
+  }
+  if (fclose(fp) == EOF) exitWithIOError(filename); 
+}
+
 
 //------------------------------------------------------------------------------
 ///
@@ -648,6 +697,7 @@ int main(int argc, char** argv)
   uint8_t ec_level;
   int return_value;
   bool write_svg = false;
+  bool write_csv = false;
   char filename[256];
 
   if (argc > 3) 
@@ -658,6 +708,11 @@ int main(int argc, char** argv)
   else if (argc == 3 && strcmp(argv[1], "-b") == 0)
   {
     write_svg = true;
+    strcpy(filename, argv[2]);
+  }
+  else if (argc == 3 && strcmp(argv[1], "-c") == 0)
+  {
+    write_csv = true;
     strcpy(filename, argv[2]);
   }
 
@@ -807,9 +862,9 @@ int main(int argc, char** argv)
     MASK_PATTERN_ID, format_string);
   outputMatrix(matrix, size);
 
-  if (write_svg) {
-    outputMatrixToSVGFile(matrix, size, filename);
-  }
+  if (write_svg) outputMatrixToSVGFile(matrix, size, filename);
+  if (write_csv) outputMatrixToCSVFile(matrix, size, filename);
+
 
   free(MessageData.data_);
   free(message_data_stream);
